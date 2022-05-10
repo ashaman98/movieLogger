@@ -38,7 +38,7 @@ async function getUser(id){
 
 async function login(data){
 
-    const user = User.findOne({
+    const user = await User.findOne({
         username: data.username,
         password: data.password
     })
