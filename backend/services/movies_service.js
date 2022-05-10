@@ -1,7 +1,9 @@
 const { default: axios } = require("axios");
-const { NotFound, Conflict } = require("../middlewares/errorHandler");
+const { NotFound, Conflict, InternalServerError } = require("../middlewares/errorHandler");
 const Log = require("../models/log");
 const Movie = require("../models/movie");
+const { startSession } = require("mongoose");
+const User = require("../models/user");
 
 async function fetchMovie(title){
     const apiUrl = `http://www.omdbapi.com/?apikey=ec35c852&t=${title}`;
@@ -21,12 +23,13 @@ async function getMovie(title){
 }
 
 async function logMovie(data, user, status){
-    const movieExists = await Movie.findOne({imdbID: data.imdbID})
+    const movieExists = await Movie.findOne({imdb_id: data.imdbID})
 
     if(movieExists){
+
         const exists = await Log.findOne({
             user_id: user._id,
-            movie_id: movie._id,
+            movie_id: movieExists._id,
             status: status
         })
         if(exists){
@@ -34,7 +37,7 @@ async function logMovie(data, user, status){
         }
         const log = await Log.create({
             user_id: user._id,
-            movie_id: movie._id,
+            movie_id: movieExists._id,
             status: status
         })
 
@@ -58,4 +61,43 @@ async function logMovie(data, user, status){
 
 }
 
-module.exports = {getMovie, logMovie}
+async function getList(user_id){
+    console.log("Commencing retrieval of user's movies")
+    const user = await User.findById(user_id);
+    if (!user) throw new NotFound("user not found");
+    
+    const session = await startSession()
+
+    try{
+        session.startTransaction()
+        const userLogs = await Log.find({user_id: user_id},null,{session})
+        if(!userLogs) throw new NotFound("User has no entries")
+        console.log(userLogs)
+
+        console.log("getting the movie list")
+        const movieList = []
+
+        for (const elem of userLogs){
+            const data = await Movie.findOne({_id: elem.movie_id}, null,{session})
+            //data['status'] = elem.status                                 TODO: add the status to entry
+                                                                        //ERROR:Cannot set properties of null (setting 'status')
+            movieList.push(data)
+        }
+    
+        await session.commitTransaction();
+        session.endSession();
+        console.log("Succesfully retrieved data");
+
+        return movieList;
+
+    }catch(err){
+        console.log("Transaction failed, reverting changes");
+        await session.abortTransaction();
+        session.endSession();
+        console.log(err.message);
+        
+        throw new InternalServerError("Internal error")
+    }
+}
+
+module.exports = {getMovie, logMovie, getList}
