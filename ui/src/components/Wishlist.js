@@ -6,6 +6,7 @@ const requestWishlist = (options) => {
     alert("Fill all fields");
     return;
   }
+  console.log('here: ', options)
 
   return fetch(`http://localhost:3333/movies/user/list`, {
     method: "GET",
@@ -19,8 +20,8 @@ export const Wishlist = ({ user, setRoute }) => {
   const [movies, setMoview] = useState([]);
   useEffect(() => {
     requestWishlist({ user })
-      .then((res) => res.json())
-      .then((res) => setMoview(res));
+      .then((res) =>  res.json())
+      .then((res) =>  setMoview(res));
   }, [user]);
 
   return (
