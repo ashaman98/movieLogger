@@ -5,7 +5,7 @@ const { Unauthorized, NotFound } = require("./errorHandler")
  
 async function verifyToken(req,res,next){
     try{
-        console.log(req.headers['authorization'], req.headers);
+        
         const authHeader = req.headers['authorization']
         const token = authHeader && authHeader.split(' ')[1]
         
