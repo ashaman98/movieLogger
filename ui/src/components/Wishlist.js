@@ -17,11 +17,11 @@ const requestWishlist = (options) => {
 };
 
 export const Wishlist = ({ user, setRoute }) => {
-  const [movies, setMoview] = useState([]);
+  const [movies, setMovies] = useState([]);
   useEffect(() => {
     requestWishlist({ user })
       .then((res) =>  res.json())
-      .then((res) =>  setMoview(res));
+      .then((res) =>  setMovies(res));
   }, [user]);
 
   return (

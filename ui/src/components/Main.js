@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Movie } from "./Movie";
 
 const searchMovies = (options) => {
@@ -6,6 +6,7 @@ const searchMovies = (options) => {
     alert("Fill all fields");
     return;
   }
+  
   return fetch(`http://localhost:3333/movies/${options.search}`, {
     method: "GET",
     headers: {
@@ -13,16 +14,41 @@ const searchMovies = (options) => {
     },
   });
 };
+const addMovies = (options) => {
+  if (!options.movie) {
+    alert("search the movie");
+    return;
+  }
+  console.log("Options:", options);
+  return fetch(`http://localhost:3333/movies/${options.status}`, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${options.user.token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      ...options.movie
+    }),
+  });
+};
 
 export const Main = ({ user, setRoute }) => {
   const [search, setSearch] = useState("");
   // {Director: string; Title: string; Year: number; imdbID: string}
   const [movie, setMovie] = useState(null);
+  const [status, setStatus] = useState("none");
+
   const handleSubmit = (event) => {
     event.preventDefault();
     searchMovies({ search, user })
       .then((res) => res.json())
       .then((res) => setMovie(res));
+  };
+  const handleLogging = (event) => {
+    event.preventDefault();
+    addMovies({ movie, user, status })
+      .then((res) => res.json())
+      .then((res) => console.log(res));
   };
   return (
     <div
@@ -51,7 +77,17 @@ export const Main = ({ user, setRoute }) => {
         <input type="submit" value="Submit" />
       </form>
       {movie && <Movie movie={movie} />}
-      <button onClick={() => setRoute("wishlist")}>go to wishlist</button>
+      <button onClick={(e) => {
+          setStatus("wishlist")
+          handleLogging(e)
+          }
+        }>Want To Watch</button>
+        <button onClick={(e) => {
+          setStatus("watched")
+          handleLogging(e)
+        }
+        }>Watched</button>
+      <button onClick={() => setRoute("wishlist")}>go to your list</button>
     </div>
   );
 };
